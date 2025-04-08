@@ -1,0 +1,29 @@
+{
+  "name": "microservicios",
+  "version": "1.0.0",
+  "description": "Microservicios con Node.js y Express",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "packageManager": "npm@11.2.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/juancrespo25/microservicios.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/juancrespo25/microservicios/issues"
+  },
+  "homepage": "https://github.com/juancrespo25/microservicios#readme"
+}

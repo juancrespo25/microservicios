@@ -1,0 +1,31 @@
+### Get all movies
+GET http://localhost:3500/movie
+
+### Get movie by id
+GET http://localhost:3500/movie/aad400a6-a55f-4c67-90b2-daa0c0dccb2d
+
+
+### Create a new movie
+POST http://localhost:3400/movie
+Content-Type: application/json
+
+  {
+    "title": "Tsssrth of the Shadwor",
+    "releaseYear": "2000",
+    "duration": 788,
+    "actors": [{
+      "name": "John Doe",
+      "birthPlace": "New York",
+    }]
+  }
+
+### Update a movie by id
+PUT http://localhost:3500/movie/aad400a6-a55f-4c67-90b2-daa0c0dccb2d
+Content-Type: application/json
+
+  {
+    "duration": 11123
+  }
+
+### Delete a movie by id
+DELETE http://localhost:3400/movie/7304ca6f-ade1-4bb3-9bed-a0b8d42b91da
