@@ -1,44 +1,57 @@
-import { Movie } from ".";
-import { MoviePort } from "../ports";
-import { MovieUpdate } from "./movie";
+import type { ConsumeMessage } from "amqplib";
+import type { Movie } from ".";
+import type { MoviePort } from "../ports";
+import type { MovieUpdate } from "./movie";
 
 export class MovieApplication {
+  static instance: MovieApplication
 
-    constructor(private readonly port: MoviePort) {}
-
-    async create(movie: Movie){
-        return this.port.save(movie);
+  constructor(private readonly port: MoviePort) {
+    if (!MovieApplication.instance) {
+      MovieApplication.instance = this;
     }
+  }
 
-    async update(movieId: string,props: MovieUpdate){
-        const movie = await this.port.getOne(movieId);
-        if(!movie) throw new Error("Movie not found");
+  async create(movie: Movie) {
+    const movieCreated = await this.port.save(movie);
+    await this.port.sendNotification(movieCreated);
+    return movieCreated
+  }
 
-        movie.update(props);
-        return this.port.save(movie);
-    }
+  async update(movieId: string, props: MovieUpdate) {
+    const movie = await this.port.getOne(movieId);
+    if (!movie) throw new Error("Movie not found");
 
-    async delete(movieId: string){
-        const movie = await this.port.getOne(movieId);
-        if(!movie) throw new Error("Movie not found");
+    movie.update(props);
+    return this.port.save(movie);
+  }
 
-        movie.delete();
-        return this.port.save(movie);
-    }
-    async getOne(movieId: string){
-        const movie = await this.port.getOne(movieId);
-        if(!movie) throw new Error("Movie not found");
+  async delete(movieId: string) {
+    const movie = await this.port.getOne(movieId);
+    if (!movie) throw new Error("Movie not found");
 
-        return movie;
-    }
+    movie.delete();
+    return this.port.save(movie);
+  }
 
-    async getAll(){
-        return this.port.getAll();
-    }
+  async getOne(movieId: string) {
+    const movie = await this.port.getOne(movieId);
+    if (!movie) throw new Error("Movie not found");
 
-    async getByPage(page: number, limit: number){
-        return this.port.getByPage(page, limit);
-    }
+    return movie;
+  }
 
+  async getAll() {
+    return this.port.getAll();
+  }
 
+  async getByPage(page: number, limit: number) {
+    return this.port.getByPage(page, limit);
+  }
+
+  async listenNotification() {
+    this.port.receiveNotification((message: ConsumeMessage) => {
+      console.log("Received message:", message.content.toString());
+    });
+  }
 }

@@ -1,18 +1,28 @@
+import { env } from "./env";
 import app from "./app"
 import { type Bootstrap, DatabaseBootstrap, ServerBootstrap  } from "./bootstrap"
-import { env } from "./env";
+import { RabbitmqBootstrap } from "./bootstrap/rabbitmq.bootstrap";
+import { MovieApplication } from "./module/application";
+
 
 
 (async () => {
     try {
         const serverBootstrap: Bootstrap = new ServerBootstrap(app)
-        const databaseBootstrap  = new DatabaseBootstrap()
+        const databaseBootstrap: Bootstrap  = new DatabaseBootstrap()
+        const rabbitmqBootstrap: Bootstrap = new RabbitmqBootstrap()
 
-        const promises = [serverBootstrap.initialize(), databaseBootstrap.initialize()]
+        const promises = [
+            serverBootstrap.initialize(),
+            databaseBootstrap.initialize(),
+            rabbitmqBootstrap.initialize()]
 
         await Promise.all(promises)
         console.log(`Server is running on port ${env.PORT}`);
         console.log("Database connection established")
+        console.log(`RabbitMQ connection established`);
+
+       MovieApplication.instance.listenNotification()
     } catch (error) {
         console.error(error)
         process.exit(1)
