@@ -1,8 +1,10 @@
 import { env } from "./env";
 import app from "./app"
-import { type Bootstrap, DatabaseBootstrap, ServerBootstrap  } from "./bootstrap"
+import { type Bootstrap, DatabaseBootstrap, KafkaBootstrap, ServerBootstrap  } from "./bootstrap"
 import { RabbitmqBootstrap } from "./bootstrap/rabbitmq.bootstrap";
 import { MovieApplication } from "./module/application";
+import { ProducerService } from "./core/kafka/produce.service";
+import { ConsumerService } from "./core/kafka/consumer.service";
 
 
 
@@ -11,18 +13,23 @@ import { MovieApplication } from "./module/application";
         const serverBootstrap: Bootstrap = new ServerBootstrap(app)
         const databaseBootstrap: Bootstrap  = new DatabaseBootstrap()
         const rabbitmqBootstrap: Bootstrap = new RabbitmqBootstrap()
+        const kafkaBootstrap: Bootstrap = new KafkaBootstrap()
 
         const promises = [
             serverBootstrap.initialize(),
             databaseBootstrap.initialize(),
-            rabbitmqBootstrap.initialize()]
+            rabbitmqBootstrap.initialize(),
+            kafkaBootstrap.initialize()]
 
         await Promise.all(promises)
         console.log(`Server is running on port ${env.PORT}`);
         console.log("Database connection established")
         console.log(`RabbitMQ connection established`);
+        console.log(`Kafka connection established`);
 
        MovieApplication.instance.listenNotification()
+       await ProducerService.connect()
+       await ConsumerService.connect(env.KAFKA_TOPIC_MESSAGE)
     } catch (error) {
         console.error(error)
         process.exit(1)
