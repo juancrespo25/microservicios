@@ -1,0 +1,7 @@
+### create appointment
+POST http://localhost:3400/appointment
+Content-Type: application/json
+{
+    "patientId": 19000009,
+    "scheduleId": 12456,
+}
