@@ -1,0 +1,119 @@
+services:
+  server-mysql:
+    image: mysql:8
+    container_name: server-mysql
+    profiles:
+      - servers
+    ports:
+      - "3326:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 12345
+      MYSQL_DATABASE: appointment
+      MYSQL_USER: user
+      MYSQL_PASSWORD: 12345
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    volumes:
+      - mysql-ms:/var/lib/mysql
+    networks:
+      - net-ms
+
+  client-mysql:
+    image: phpmyadmin:latest
+    container_name: client-mysql
+    profiles:
+      - servers
+    ports:
+      - "9080:80"
+    depends_on:
+      server-mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      - PMA_ARBITRARY=1
+    networks:
+      - net-ms
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:5.5.3
+    container_name: zookeeper
+    profiles:
+      - servers
+    hostname: zookeeper
+    ports:
+      - "22181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    healthcheck:
+      test: nc -z localhost 2181 || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - net-ms
+  
+    # Kafka (using ZooKeeper)
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    profiles:
+      - servers
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092" # For internal communication
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "kafka:9092", "--list"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - net-ms
+
+  # Kafka UI (Web Interface)
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    profiles:
+      - servers
+    depends_on:
+      - kafka
+    ports:
+      - "8082:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    restart: unless-stopped
+    networks:
+      - net-ms
+
+networks:
+  net-ms:
+    driver: bridge
+    name: net-ms
+
+volumes:
+  mysql-ms:
+    driver: local
+    name: mysql-ms
